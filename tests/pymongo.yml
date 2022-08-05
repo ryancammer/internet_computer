@@ -1,0 +1,6 @@
+test:
+  clients:
+    default:
+      database: canister_metadata_test
+      hosts:
+        - mongo:27017

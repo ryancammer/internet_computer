@@ -1,0 +1,6 @@
+development:
+  clients:
+    default:
+      database: canister_metadata_development
+      hosts:
+        - mongo:27017
