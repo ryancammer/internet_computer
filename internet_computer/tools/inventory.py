@@ -109,7 +109,7 @@ class Canister:
         fields = self.to_dict()
 
         if fields_to_output:
-            return ','.join([fields[field] for field in fields_to_output])
+            return ','.join([str(fields[field]) for field in fields_to_output])
 
         return ','.join([
             str(self._id),

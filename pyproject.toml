@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "internet_computer-tools"
-version = "0.1.0"
-description = "InternetComputer Tools provides tools for querying and working with the Internet Computer."
+name = "internet_computer"
+version = "0.2.0"
+description = "internet_computer provides tools for querying and working with the Internet Computer."
 authors = ["Ryan Cammer <ryancammer@gmail.com>"]
 
 [tool.poetry.dependencies]
