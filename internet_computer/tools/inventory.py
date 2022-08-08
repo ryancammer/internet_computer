@@ -1,10 +1,8 @@
 import json
 from string import Template
-import asyncio
 
 import aiohttp
 import requests
-
 from pymongo.database import Database
 
 
@@ -69,18 +67,16 @@ class Canister:
     def raw_canister_url(self):
         return self.raw_canister_url_template.substitute(canister_id=self.canister_id)
 
-    async def verify_web_canister_async(self, existing_session=None):
-        last_status_code = None
-
+    async def verify_web_canister_async(self, existing_session=None, save=False):
         if existing_session is None:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    self.raw_canister_url_template.substitute(canister_id=self.canister_id)
+                    self.raw_canister_url
                 ) as resp:
                     last_status_code = resp.status
         else:
             async with existing_session.get(
-                self.raw_canister_url_template.substitute(canister_id=self.canister_id)
+                self.raw_canister_url
             ) as resp:
                 last_status_code = resp.status
 
@@ -88,14 +84,20 @@ class Canister:
 
         self.__is_web_canister = self.last_status_code not in type(self).non_web_canister_status_codes
 
+        if save:
+            self.save()
+
         return self.__is_web_canister
 
-    def verify_web_canister(self):
+    def verify_web_canister(self, save=False):
         self.__last_status_code = requests.get(
-            self.raw_canister_url_template.substitute(canister_id=self.canister_id)
+            self.raw_canister_url
         ).status_code
 
         self.__is_web_canister = self.last_status_code not in type(self).non_web_canister_status_codes
+
+        if save:
+            self.save()
 
         return self.__is_web_canister
 
@@ -177,6 +179,13 @@ class Canister:
     @classmethod
     def set_client(cls, client: Database):
         cls.__client = client
+
+    @classmethod
+    def ensure_schema(cls):
+        client = cls.get_client()
+        client[cls.collection_name].create_index([('canister_id', 1)], unique=True)
+        client[cls.collection_name].create_index([('subnet_id', 1)])
+        client[cls.collection_name].create_index([('module_hash', 1)])
 
     @classmethod
     def find(cls, criteria):

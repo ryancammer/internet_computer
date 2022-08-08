@@ -16,10 +16,34 @@ DEFAULT_MAXIMUM_CANISTER_COUNT = 1000000
 DEFAULT_MAXIMUM_TIME_LIMIT = 7200
 DEFAULT_SOURCE_URL = 'https://ic-api.internetcomputer.org/api/v3/canisters'
 DEFAULT_PYMONGO_CONFIG_PATH = 'pymongo.yml'
+DEFAULT_ENVIRONMENT = 'development'
+DEFAULT_CLASS_NAME = 'Canister'
+
+
+class MongoValidator:
+    command_name = 'validate_mongo'
+
+    def __init__(
+        self,
+        pymongo_config_path=DEFAULT_PYMONGO_CONFIG_PATH,
+        environment=DEFAULT_ENVIRONMENT,
+        class_name=DEFAULT_CLASS_NAME
+    ):
+        self.__mongo_client = mongo_client = MongoClientConfigurator(
+            config_path=pymongo_config_path,
+            environment=environment
+        ).from_config()
+
+        self.__classname = class_name
+
+    def validate(self):
+        mongo_class = globals()[self.__classname]
+        mongo_class.set_client(self.__mongo_client)
+        mongo_class.ensure_schema()
 
 
 class CanisterWebStatusFetcher:
-    DEFAULT_TASK_PROCESSOR_COUNT = 16
+    DEFAULT_TASK_PROCESSOR_COUNT = 1024
 
     command_name = 'web_status'
 
@@ -213,10 +237,17 @@ class InventoryCommand:
             choices=[
                 CanisterFetcher.command_name,
                 MongoDumper.command_name,
+                MongoValidator.command_name,
                 CanisterWebStatusFetcher.command_name
             ],
             type=str,
             help='The inventory command to execute.')
+
+        parser.add_argument(
+            '-c',
+            '--class_name',
+            type=str,
+            help='The class name that represents the collection in MongoDB.')
 
         parser.add_argument(
             '-e',
@@ -311,3 +342,12 @@ class InventoryCommand:
                     pymongo_config_path=args.pymongo_config,
                     environment=args.environment
                 )
+            case MongoValidator.command_name:
+                MongoValidator(
+                    pymongo_config_path=args.pymongo_config,
+                    environment=args.environment,
+                    class_name=args.class_name
+                ).validate(
+                )
+            case 'default':
+                raise Exception('Unknown command: ' + args.command)
