@@ -1,6 +1,8 @@
 import json
 from string import Template
+import asyncio
 
+import aiohttp
 import requests
 
 from pymongo.database import Database
@@ -66,6 +68,27 @@ class Canister:
     @property
     def raw_canister_url(self):
         return self.raw_canister_url_template.substitute(canister_id=self.canister_id)
+
+    async def verify_web_canister_async(self, existing_session=None):
+        last_status_code = None
+
+        if existing_session is None:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    self.raw_canister_url_template.substitute(canister_id=self.canister_id)
+                ) as resp:
+                    last_status_code = resp.status
+        else:
+            async with existing_session.get(
+                self.raw_canister_url_template.substitute(canister_id=self.canister_id)
+            ) as resp:
+                last_status_code = resp.status
+
+        self.__last_status_code = last_status_code
+
+        self.__is_web_canister = self.last_status_code not in type(self).non_web_canister_status_codes
+
+        return self.__is_web_canister
 
     def verify_web_canister(self):
         self.__last_status_code = requests.get(
@@ -134,7 +157,7 @@ class Canister:
 
     @classmethod
     def csv_header(cls, fields_to_output):
-        if len(fields_to_output) > 0:
+        if fields_to_output is not None and len(fields_to_output) > 0:
             return ','.join(fields_to_output)
 
         return ','.join([
@@ -170,9 +193,9 @@ class Canister:
         )
 
     @classmethod
-    def all(cls):
+    def all(cls, query_filter=None):
         client = cls.get_client()
-        finder = client[cls.collection_name].find()
+        finder = client[cls.collection_name].find(query_filter)
         while True:
             try:
                 yield cls(**finder.next())
@@ -228,7 +251,7 @@ class CanisterMetadata:
         return self.__total_canisters
 
 
-class CanisterFetcher:
+class CanisterDataFetcher:
     def __init__(self, source_url, limit=100, offset=0):
         self.__source_url = source_url
         self.__limit = limit
