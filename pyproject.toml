@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "internet_computer"
-version = "0.3.0"
+version = "0.4.0"
 description = "internet_computer provides tools for querying and working with the Internet Computer."
 authors = ["Ryan Cammer <ryancammer@gmail.com>"]
 
