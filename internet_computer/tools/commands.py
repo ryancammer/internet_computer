@@ -101,10 +101,7 @@ class CanisterWebStatusFetcher:
                 print(f'Added {self.counter} canisters to process. Queue size: {self.queue.qsize()}')
             await self.queue.put(canister)
 
-        started_at = time.monotonic()
         await self.queue.join()
-        total_slept_for = time.monotonic() - started_at
-        print(f'Total: {self.counter} in {total_slept_for} seconds')
 
         # Cancel our worker tasks.
         for task in tasks:
